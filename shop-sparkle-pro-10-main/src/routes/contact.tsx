@@ -9,8 +9,8 @@ import { useState } from "react";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — furnX" },
-      { name: "description", content: "Get in touch with furnX." },
+      { title: "Contact — FurnX" },
+      { name: "description", content: "Get in touch with FurnX." },
     ],
   }),
   component: Contact,

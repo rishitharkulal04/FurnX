@@ -3,7 +3,7 @@ export function Footer() {
     <footer className="mt-24 border-t border-border bg-secondary/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4 md:px-6">
         <div>
-          <h3 className="font-display text-xl font-bold text-primary">furnX</h3>
+          <h3 className="font-display text-xl font-bold text-primary">FurnX</h3>
           <p className="mt-3 text-sm text-muted-foreground">
             Beautifully crafted furniture for the modern home.
           </p>
@@ -26,7 +26,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} furnX. Crafted with care.
+        © {new Date().getFullYear()} FurnX. Crafted with care.
       </div>
     </footer>
   );

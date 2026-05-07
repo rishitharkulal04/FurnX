@@ -3,8 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — furnX" },
-      { name: "description", content: "furnX crafts beautifully designed furniture for the modern home." },
+      { title: "About — FurnX" },
+      { name: "description", content: "FurnX crafts beautifully designed furniture for the modern home." },
     ],
   }),
   component: About,
@@ -13,9 +13,9 @@ export const Route = createFileRoute("/about")({
 function About() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 md:px-6">
-      <h1 className="font-display text-4xl font-bold">About furnX</h1>
+      <h1 className="font-display text-4xl font-bold">About FurnX</h1>
       <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-        furnX designs and curates beautifully crafted furniture for the modern home —
+        FurnX designs and curates beautifully crafted furniture for the modern home —
         warm materials, honest construction, and timeless silhouettes that get better with age.
       </p>
       <p className="mt-4 text-muted-foreground">

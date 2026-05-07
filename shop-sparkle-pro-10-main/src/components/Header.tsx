@@ -27,7 +27,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 md:px-6">
         <Link to="/" className="flex items-center gap-2">
-          <span className="font-display text-2xl font-bold text-primary">furnX</span>
+          <span className="font-display text-2xl font-bold text-primary">FurnX</span>
         </Link>
 
         <nav className="ml-6 hidden items-center gap-6 text-sm md:flex">

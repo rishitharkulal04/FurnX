@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,18 @@ export const Route = createFileRoute("/checkout")({ component: Checkout });
 
 function Checkout() {
   const { items, total, clear } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", address: "", city: "", zip: "", country: "", phone: "" });
+
+  if (!user) return (
+    <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <h1 className="font-display text-3xl font-bold">Checkout</h1>
+      <p className="mt-3 text-muted-foreground">Please sign in to checkout.</p>
+      <Link to="/auth"><Button className="mt-6">Sign in</Button></Link>
+    </div>
+  );
 
   if (items.length === 0) return (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
@@ -25,54 +35,23 @@ function Checkout() {
   const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.address || !form.city || !form.zip || !form.country || !form.phone) {
-      toast.error("Please fill all fields");
-      return;
+      toast.error("Please fill all fields"); return;
     }
     setSubmitting(true);
-    try {
-      const { data: order, error } = await supabase.from("orders").insert({
-        full_name: form.name,
-        address: form.address,
-        city: form.city,
-        zip: form.zip,
-        country: form.country,
-        phone: form.phone,
-        total,
-      }).select().single();
-
-      if (error || !order) {
-        toast.error(error?.message ?? "Failed to place order");
-        setSubmitting(false);
-        return;
-      }
-
-      // Insert order items
-      const orderItems = items.map((i) => ({
-        order_id: order.id,
-        product_id: i.product_id,
-        product_name: i.product.name,
-        product_image: i.product.image_url,
-        quantity: i.quantity,
-        price: i.product.price,
-      }));
-
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) {
-        toast.error("Order created but failed to save items");
-        setSubmitting(false);
-        return;
-      }
-
-      // Clear cart from localStorage
-      await clear();
-      toast.success("Order placed successfully!");
-      navigate({ to: "/orders" });
-    } catch (err) {
-      toast.error("An error occurred");
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
+    const { data: order, error } = await supabase.from("orders").insert({
+      user_id: user.id, total,
+      shipping_name: form.name, shipping_address: form.address, shipping_city: form.city,
+      shipping_zip: form.zip, shipping_country: form.country, shipping_phone: form.phone,
+    }).select().single();
+    if (error || !order) { setSubmitting(false); toast.error(error?.message ?? "Failed"); return; }
+    const orderItems = items.map((i) => ({
+      order_id: order.id, product_id: i.product.id, product_name: i.product.name,
+      product_image: i.product.image_url, quantity: i.quantity, price: i.product.price,
+    }));
+    await supabase.from("order_items").insert(orderItems);
+    await clear();
+    toast.success("Order placed!");
+    navigate({ to: "/orders" });
   };
 
   return (

@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./auth";
 import { toast } from "sonner";
 
 interface WishCtx {
@@ -9,47 +11,28 @@ interface WishCtx {
 }
 const WishContext = createContext<WishCtx | undefined>(undefined);
 
-const WISHLIST_STORAGE_KEY = "furnx_wishlist";
-
-function loadWishlistFromStorage(): Set<string> {
-  try {
-    const data = localStorage.getItem(WISHLIST_STORAGE_KEY);
-    return new Set(data ? JSON.parse(data) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveWishlistToStorage(ids: Set<string>): void {
-  localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(Array.from(ids)));
-}
-
 export function WishlistProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [ids, setIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const wishlist = loadWishlistFromStorage();
-    setIds(wishlist);
-  }, []);
+  const refresh = useCallback(async () => {
+    if (!user) { setIds(new Set()); return; }
+    const { data } = await supabase.from("wishlist_items").select("product_id").eq("user_id", user.id);
+    setIds(new Set((data ?? []).map((r) => r.product_id)));
+  }, [user]);
 
-  const refresh = useCallback(() => {
-    const wishlist = loadWishlistFromStorage();
-    setIds(wishlist);
-  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
   const toggle = async (productId: string) => {
-    setIds((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(productId)) {
-        updated.delete(productId);
-        toast.success("Removed from wishlist");
-      } else {
-        updated.add(productId);
-        toast.success("Added to wishlist");
-      }
-      saveWishlistToStorage(updated);
-      return updated;
-    });
+    if (!user) { toast.error("Please sign in to use wishlist"); return; }
+    if (ids.has(productId)) {
+      await supabase.from("wishlist_items").delete().eq("user_id", user.id).eq("product_id", productId);
+      toast.success("Removed from wishlist");
+    } else {
+      await supabase.from("wishlist_items").insert({ user_id: user.id, product_id: productId });
+      toast.success("Added to wishlist");
+    }
+    refresh();
   };
 
   return (

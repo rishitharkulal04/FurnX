@@ -1,19 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./auth";
 import { toast } from "sonner";
-
-export interface CartProduct {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  image_url: string | null;
-}
 
 export interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
-  product: CartProduct;
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    image_url: string | null;
+    stock: number;
+  };
 }
 
 interface CartCtx {
@@ -21,7 +22,7 @@ interface CartCtx {
   count: number;
   total: number;
   loading: boolean;
-  add: (productId: string, product?: CartProduct, qty?: number) => Promise<void>;
+  add: (productId: string, qty?: number) => Promise<void>;
   update: (id: string, qty: number) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
@@ -29,86 +30,52 @@ interface CartCtx {
 }
 
 const CartContext = createContext<CartCtx | undefined>(undefined);
-const CART_STORAGE_KEY = "furnx_cart";
-
-function loadCartFromStorage(): CartItem[] {
-  try {
-    const data = localStorage.getItem(CART_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveCartToStorage(items: CartItem[]): void {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-}
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const cartItems = loadCartFromStorage();
-    setItems(cartItems);
+  const refresh = useCallback(async () => {
+    if (!user) { setItems([]); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("cart_items")
+      .select("id, product_id, quantity, product:products(id,name,slug,price,image_url,stock)")
+      .eq("user_id", user.id);
+    setItems((data as any) ?? []);
     setLoading(false);
-  }, []);
+  }, [user]);
 
-  const refresh = useCallback(() => {
-    const cartItems = loadCartFromStorage();
-    setItems(cartItems);
-  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const add = async (productId: string, product?: CartProduct, qty = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product_id === productId);
-      let updated: CartItem[];
-
-      if (existing) {
-        updated = prev.map((i) =>
-          i.product_id === productId ? { ...i, quantity: i.quantity + qty } : i
-        );
-      } else {
-        if (!product) {
-          toast.error("Product information missing");
-          return prev;
-        }
-        const newItem: CartItem = {
-          id: `${productId}-${Date.now()}`,
-          product_id: productId,
-          quantity: qty,
-          product,
-        };
-        updated = [...prev, newItem];
-      }
-
-      saveCartToStorage(updated);
-      toast.success("Added to cart");
-      return updated;
-    });
+  const add = async (productId: string, qty = 1) => {
+    if (!user) { toast.error("Please sign in to add items to your cart"); return; }
+    const existing = items.find((i) => i.product_id === productId);
+    if (existing) {
+      await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
+    } else {
+      await supabase.from("cart_items").insert({ user_id: user.id, product_id: productId, quantity: qty });
+    }
+    toast.success("Added to cart");
+    refresh();
   };
 
   const update = async (id: string, qty: number) => {
     if (qty <= 0) return remove(id);
-    setItems((prev) => {
-      const updated = prev.map((i) => (i.id === id ? { ...i, quantity: qty } : i));
-      saveCartToStorage(updated);
-      return updated;
-    });
+    await supabase.from("cart_items").update({ quantity: qty }).eq("id", id);
+    refresh();
   };
 
   const remove = async (id: string) => {
-    setItems((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
-      saveCartToStorage(updated);
-      toast.success("Removed from cart");
-      return updated;
-    });
+    await supabase.from("cart_items").delete().eq("id", id);
+    refresh();
   };
 
   const clear = async () => {
-    setItems([]);
-    saveCartToStorage([]);
+    if (!user) return;
+    await supabase.from("cart_items").delete().eq("user_id", user.id);
+    refresh();
   };
 
   const count = items.reduce((s, i) => s + i.quantity, 0);

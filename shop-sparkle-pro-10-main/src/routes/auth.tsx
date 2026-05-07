@@ -33,7 +33,7 @@ function Auth() {
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <h1 className="font-display text-3xl font-bold text-center">Welcome to furnX</h1>
+        <h1 className="font-display text-3xl font-bold text-center">Welcome to FurnX</h1>
         <Tabs defaultValue="signin" className="mt-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign in</TabsTrigger>

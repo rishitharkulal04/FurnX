@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Trash2, Minus, Plus } from "lucide-react";
 
@@ -7,6 +8,17 @@ export const Route = createFileRoute("/cart")({ component: CartPage });
 
 function CartPage() {
   const { items, total, update, remove } = useCart();
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <h1 className="font-display text-3xl font-bold">Your cart</h1>
+        <p className="mt-3 text-muted-foreground">Please sign in to see your cart.</p>
+        <Link to="/auth"><Button className="mt-6">Sign in</Button></Link>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

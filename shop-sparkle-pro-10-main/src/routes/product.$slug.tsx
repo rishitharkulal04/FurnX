@@ -87,14 +87,7 @@ function ProductPage() {
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-6">
       <div className="grid gap-10 md:grid-cols-2">
         <div className="aspect-square overflow-hidden rounded-2xl bg-secondary">
-          <img
-            src={product.image_url || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=600&fit=crop"}
-            alt={product.name}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=600&fit=crop";
-            }}
-            className="h-full w-full object-cover"
-          />
+          {product.image_url && <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />}
         </div>
         <div className="space-y-6">
           <div>
