@@ -1,6 +1,7 @@
 [build]
+  base = "shop-sparkle-pro-10-main"
   command = "npm run build"
-  publish = "dist"
+  publish = "shop-sparkle-pro-10-main/dist"
 
 [[redirects]]
   from = "/*"
